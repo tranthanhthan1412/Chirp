@@ -25,7 +25,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     /* Shadcn */
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

@@ -1,9 +1,7 @@
-import React from "react";
-
-const SignInPage = () => {
+const ChatAppPage = () => {
     return (
-        <div>SignInPage</div>
+        <div>ChatAppPage</div>
     )
 }
 
-export default SignInPage
+export default ChatAppPage
