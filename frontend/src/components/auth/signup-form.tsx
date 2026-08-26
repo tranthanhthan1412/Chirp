@@ -7,6 +7,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
+
+
 const signupFormSchema = z.object({
   lastName: z.string().min(1, "Họ không được để trống"),
   firstName: z.string().min(1, "Tên không được để trống"),
@@ -104,17 +106,18 @@ export function SignupForm({
           </form>
           <div className="relative hidden bg-muted md:block">
             <img
-              src="/placeholderSignUp.png"
+              src="/chat.png"
               alt="Image"
               className="absolute top-1/2 -translate-y-1/2 object-cover"
             />
           </div>
         </CardContent>
       </Card>
-      <div className="px-6 text-center text-xs text-balance *:[a]:hover:text-primary text-muted-foreground *:[a]:underline-offset-4">
+      <div className="px-6 text-center text-xs text-balance text-muted-foreground *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary">
         Bằng việc tiếp tục, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a>{" "}
         và <a href="#">Chính sách bảo mật</a> của chúng tôi.
       </div>
+
     </div>
   )
 }
