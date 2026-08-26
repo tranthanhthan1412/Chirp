@@ -1,0 +1,34 @@
+import api from "@/lib/axios";
+
+export const authService = {
+    signUp: async (username: string, password: string, email: string, firstName: string, lastName: string) => {
+        try {
+            const res = await api.post("/auth/signup", {
+                username,
+                password,
+                email,
+                firstName,
+                lastName,
+            }, { withCredentials: true });
+            return res.data;
+        } catch (error) {
+            console.error("Error signing up:", error);
+            throw error;
+        }
+    },
+    signIn: async (username: string, password: string) => {
+        try {
+            const res = await api.post("/auth/signin", {
+                username,
+                password,
+            }, { withCredentials: true });
+            return res.data; //access token
+        } catch (error) {
+            console.error("Error signing in:", error);
+            throw error;
+        }
+    },
+    signOut: async () => {
+        return api.post("/auth/signout", {}, { withCredentials: true });
+    }
+};

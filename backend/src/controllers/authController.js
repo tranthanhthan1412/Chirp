@@ -86,10 +86,10 @@ export const signIn = async (req, res) => {
         });
 
         // trả refresh token về trong cookie
-        res.cookie('refeshToken', refreshToken, {
+        res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: 'none', //cho phep backend va fronend chay tren 2 doumain khac nhau, 
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', //cho phep backend va fronend chay tren 2 doumain khac nhau, 
             maxAge: REFRESH_TOKEN_TTL,
         })
 
@@ -99,7 +99,7 @@ export const signIn = async (req, res) => {
             accessToken
         });
     } catch (error) {
-        console.log('Lỗi khi gọi signUp:', error);
+        console.log('Lỗi khi gọi signIn:', error);
         return res.status(500).json({ message: "Lỗi hệ thống" });
     }
 };
@@ -108,13 +108,13 @@ export const signOut = async (req, res) => {
     try {
         // lay refresh token tu trong cookie
         const token = req.cookies.refreshToken;
-        if (!token) {
+        if (token) {
             // xoa refresh token trong session trong db
             await Session.deleteOne({ refreshToken: token });
             // xoa refresh token trong cookie
             res.clearCookie('refreshToken');
         }
-        return res.status(204);
+        return res.status(200).json({ message: "Đăng xuất thành công" });
     } catch (error) {
         console.log('Lỗi khi gọi signOut:', error);
         return res.status(500).json({ message: "Lỗi hệ thống" });

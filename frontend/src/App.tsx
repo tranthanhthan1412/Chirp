@@ -5,22 +5,24 @@ import ChatAppPage from "./pages/ChatAppPage";
 import { Toaster } from "sonner";
 
 function App() {
-  return <>
-    <Toaster />
-    <BrowserRouter>
-      <Routes>
-        {/* public routes */}
-        <Route path="/signin" element={<SignInPage />} />
+  return (
+    <>
+      {/* Thêm richColors và có thể tùy chọn vị trí hiển thị (vd: top-right hoặc top-center) */}
+      <Toaster richColors position="top-right" />
 
+      <BrowserRouter>
+        <Routes>
+          {/* public routes */}
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
 
-        <Route path="/signup" element={<SignUpPage />} />
-
-        {/*protected routes */}
-        {/*todo: tao protected routes*/}
-        <Route path="/" element={<ChatAppPage />} />
-
-      </Routes>
-    </BrowserRouter>
-  </>
+          {/*protected routes */}
+          {/*todo: tao protected routes*/}
+          <Route path="/" element={<ChatAppPage />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
 }
-export default App
+
+export default App;

@@ -6,6 +6,8 @@ import { Link } from "react-router";
 import { z } from "zod";
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useAuthStore } from "@/stores/useAuthstore";
+import { useNavigate } from "react-router";
 
 const signinFormSchema = z.object({
 
@@ -19,12 +21,17 @@ export function SigninForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
+    const signIn = useAuthStore((state) => state.signIn)
+    const navigate = useNavigate();
+
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SigninFormValues>({
         resolver: zodResolver(signinFormSchema)
     });
-    const onSubmit = (data: SigninFormValues) => {
-        console.log(data);
-    }
+    const onSubmit = async (data: SigninFormValues) => {
+        const { username, password } = data;
+        await signIn(username, password);
+        navigate("/");
+    };
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card className="overflow-hidden p-0 border-border">
