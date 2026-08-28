@@ -15,7 +15,7 @@ const ProtectedRoute = () => {
             await fetchMe();
         }
         setStarting(false);
-    }
+    };
 
     useEffect(() => {
         init()
@@ -23,7 +23,7 @@ const ProtectedRoute = () => {
 
     // them loading
     if (starting || loading) {
-        return <div className='flex g-creen items justify-center'>Loading...</div>;
+        return <div className='flex min-h-screen items-center justify-center'>Loading...</div>;
     }
 
     if (!accessToken) {
