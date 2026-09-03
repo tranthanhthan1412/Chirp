@@ -28,7 +28,7 @@ friendSchema.index(
 );
 
 // 2. Tự động chuẩn hoá thứ tự userA < userB để tránh trùng lặp 2 chiều
-friendSchema.pre("save", function (next) {
+friendSchema.pre("save", function () {
     if (this.userA && this.userB) {
         const a = this.userA.toString();
         const b = this.userB.toString();
@@ -38,7 +38,6 @@ friendSchema.pre("save", function (next) {
             this.userB = temp;
         }
     }
-    next();
 });
 
 // 3. Khởi tạo và export model Ở CUỐI CÙNG

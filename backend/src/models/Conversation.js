@@ -60,13 +60,13 @@ const conversationSchema = new mongoose.Schema({
         { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     ],
     lastMessage: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Message",
+        type: lastMessageSchema,
+        default: null
     },
-    unReadCount: {
+    unreadCount: {
         type: Map,
         of: Number,
-        default: {},
+        default: () => new Map(),
     }
 }, {
     timestamps: true

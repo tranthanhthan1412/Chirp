@@ -92,7 +92,7 @@ export const acceptFriendRequest = async (req, res) => {
         await FriendRequest.findByIdAndDelete(requestId);
         // Lấy thông tin người gửi lời mời
         const fromUser = await User.findById(request.from)
-            .select('_id displayName avatarUrl email')
+            .select('_id displayName userName avatarUrl email')
             .lean();
         return res.status(200).json({
             message: 'Yêu cầu kết bạn đã được chấp nhận thành công',
@@ -150,16 +150,18 @@ export const getAllFriends = async (req, res) => {
             .populate('userB', '_id displayName userName avatarUrl bio email')
             .lean();
 
+        if (!friendships.length) {
+            return res.status(200).json({ friends: [] });
+        }
         // Lọc lấy thông tin của người bạn (không phải chính mình)
-        const friends = friendships.map(friendship => {
-            const isUserA = friendship.userA._id.toString() === userId.toString();
-            return isUserA ? friendship.userB : friendship.userA;
-        });
+        const friends = friendships
+            .filter(friendship => friendship.userA && friendship.userB)
+            .map(friendship => {
+                const isUserA = friendship.userA._id.toString() === userId.toString();
+                return isUserA ? friendship.userB : friendship.userA;
+            });
 
-        return res.status(200).json({
-            friends,
-            total: friends.length
-        });
+        return res.status(200).json({ friends });
     } catch (error) {
         console.error('Lỗi khi lấy danh sách bạn bè:', error);
         return res.status(500).json({
