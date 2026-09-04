@@ -175,15 +175,26 @@ export const getFriendRequests = async (req, res) => {
     try {
         const userId = req.user._id;
 
-        const requests = await FriendRequest.find({ to: userId })
-            .populate('from', '_id displayName userName avatarUrl email bio')
-            .sort({ createdAt: -1 })
-            .lean();
+        const populateFields = '_id displayName userName avatarUrl';
+
+        const [sent, received] = await Promise.all([
+            FriendRequest.find({
+                from: userId
+            })
+                .populate('to', populateFields)
+                .lean(),
+            FriendRequest.find({
+                to: userId
+            })
+                .populate('from', populateFields)
+                .lean()
+        ]);
 
         return res.status(200).json({
-            requests,
-            total: requests.length
+            sent: sent,
+            received: received
         });
+
     } catch (error) {
         console.error('Lỗi khi lấy danh sách yêu cầu kết bạn:', error);
         return res.status(500).json({

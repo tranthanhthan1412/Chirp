@@ -32,7 +32,7 @@ export const signUp = async (req, res) => {
             userName: username,
             hashedPassword,
             email,
-            displayName: `${firstName} ${lastName}`,
+            displayName: `${lastName} ${firstName}`,
         });
 
         // 4. Trả về thành công
