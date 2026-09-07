@@ -1,0 +1,772 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Chirp API Documentation",
+    "version": "1.0.0",
+    "description": "API Documentation for Chirp Chat Application. Bao gồm đầy đủ các module: Auth, Users, Friends, Messages, và Conversations."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Xác thực người dùng, đăng ký, đăng nhập, refresh token và đăng xuất"
+    },
+    {
+      "name": "Users",
+      "description": "Quản lý thông tin tài khoản người dùng"
+    },
+    {
+      "name": "Friends",
+      "description": "Kết bạn, chấp nhận/từ chối lời mời và danh sách bạn bè"
+    },
+    {
+      "name": "Messages",
+      "description": "Gửi tin nhắn trực tiếp và tin nhắn nhóm"
+    },
+    {
+      "name": "Conversations",
+      "description": "Tạo và quản lý cuộc trò chuyện, phân trang lịch sử tin nhắn"
+    }
+  ],
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Đăng ký tài khoản mới",
+        "description": "Tạo tài khoản người dùng mới với username, email và password.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password", "email", "firstName", "lastName"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "thangtran"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "MatKhau123@"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "thangtran@gmail.com"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "example": "Thang"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Tran"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Đăng ký thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Đăng ký thành công"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu thông tin hoặc Username/Email đã tồn tại",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Username hoặc email đã tồn tại"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Lỗi hệ thống"
+          }
+        }
+      }
+    },
+    "/auth/signin": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Đăng nhập",
+        "description": "Xác thực người dùng, trả về Access Token trong JSON body và lưu Refresh Token vào Cookie.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "thangtran"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "MatKhau123@"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công, trả về Access Token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "User Tran Thang đã logged in !",
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu username hoặc password"
+          },
+          "401": {
+            "description": "Username hoặc password không chính xác"
+          },
+          "500": {
+            "description": "Lỗi hệ thống"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Làm mới Access Token",
+        "description": "Tạo Access Token mới dựa trên refreshToken được lưu trong Cookie.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Cấp Access Token mới thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Token đã được làm mới thành công!",
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Cookie không có refreshToken"
+          },
+          "403": {
+            "description": "Token không hợp lệ hoặc đã hết hạn"
+          },
+          "500": {
+            "description": "Lỗi hệ thống"
+          }
+        }
+      }
+    },
+    "/auth/signout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Đăng xuất",
+        "description": "Xóa session trong Database và xóa cookie refreshToken.",
+        "responses": {
+          "200": {
+            "description": "Đăng xuất thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Đăng xuất thành công"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Lỗi hệ thống"
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Lấy thông tin tài khoản hiện tại (AuthMe)",
+        "description": "Trả về thông tin của user hiện đang đăng nhập (dựa trên JWT token).",
+        "responses": {
+          "200": {
+            "description": "Thông tin người dùng hiện tại",
+            "content": {
+              "application/json": {
+                "example": {
+                  "_id": "660c1d5b2f4c9c1b8a123456",
+                  "userName": "thangtran",
+                  "email": "thangtran@gmail.com",
+                  "displayName": "Tran Thang",
+                  "avatarUrl": "https://avatar.iran.liara.run/public/boy?username=thangtran",
+                  "bio": "Hello World!"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa xác thực hoặc Token không hợp lệ"
+          },
+          "500": {
+            "description": "Lỗi hệ thống"
+          }
+        }
+      }
+    },
+    "/users/test": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Endpoint kiểm tra (Test route)",
+        "responses": {
+          "204": {
+            "description": "Test thành công (No content)"
+          }
+        }
+      }
+    },
+    "/friends": {
+      "get": {
+        "tags": ["Friends"],
+        "summary": "Lấy danh sách tất cả bạn bè",
+        "description": "Lấy toàn bộ danh sách bạn bè của người dùng hiện tại.",
+        "responses": {
+          "200": {
+            "description": "Danh sách bạn bè",
+            "content": {
+              "application/json": {
+                "example": {
+                  "friends": [
+                    {
+                      "_id": "660c1d5b2f4c9c1b8a654321",
+                      "displayName": "Nguyen Van A",
+                      "userName": "nguyenvana",
+                      "avatarUrl": "https://avatar.iran.liara.run/public/boy",
+                      "bio": "Frontend Developer",
+                      "email": "vana@gmail.com"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "500": {
+            "description": "Lỗi hệ thống"
+          }
+        }
+      }
+    },
+    "/friends/requests": {
+      "get": {
+        "tags": ["Friends"],
+        "summary": "Lấy danh sách lời mời kết bạn",
+        "description": "Lấy cả danh sách yêu cầu kết bạn đã gửi (sent) và đã nhận (received).",
+        "responses": {
+          "200": {
+            "description": "Danh sách yêu cầu kết bạn",
+            "content": {
+              "application/json": {
+                "example": {
+                  "sent": [
+                    {
+                      "_id": "660c223a2f4c9c1b8a999888",
+                      "from": "660c1d5b2f4c9c1b8a123456",
+                      "to": {
+                        "_id": "660c1d5b2f4c9c1b8a654321",
+                        "displayName": "Nguyen Van B",
+                        "userName": "nguyenvanb",
+                        "avatarUrl": ""
+                      },
+                      "message": "Chào bạn, kết bạn với mình nhé!"
+                    }
+                  ],
+                  "received": [
+                    {
+                      "_id": "660c223a2f4c9c1b8a777666",
+                      "from": {
+                        "_id": "660c1d5b2f4c9c1b8a111222",
+                        "displayName": "Le Thi C",
+                        "userName": "lethic",
+                        "avatarUrl": ""
+                      },
+                      "to": "660c1d5b2f4c9c1b8a123456",
+                      "message": "Hi, làm quen nha!"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          }
+        }
+      }
+    },
+    "/friends/request": {
+      "post": {
+        "tags": ["Friends"],
+        "summary": "Gửi lời mời kết bạn",
+        "description": "Gửi một lời mời kết bạn đến người dùng khác bằng User ID của họ.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["to"],
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "description": "User ID của người nhận lời mời",
+                    "example": "660c1d5b2f4c9c1b8a654321"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Tin nhắn kèm theo",
+                    "example": "Chào bạn, kết bạn với mình nhé!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Yêu cầu kết bạn đã được gửi thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Yêu cầu kết bạn đã được gửi thành công",
+                  "request": {
+                    "_id": "660c223a2f4c9c1b8a999888",
+                    "from": "660c1d5b2f4c9c1b8a123456",
+                    "to": "660c1d5b2f4c9c1b8a654321",
+                    "message": "Chào bạn, kết bạn với mình nhé!"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ hoặc đã là bạn bè / đã gửi yêu cầu trước đó"
+          },
+          "404": {
+            "description": "Người dùng nhận không tồn tại"
+          }
+        }
+      }
+    },
+    "/friends/requests/{requestId}/accept": {
+      "post": {
+        "tags": ["Friends"],
+        "summary": "Chấp nhận lời mời kết bạn",
+        "description": "Chấp nhận yêu cầu kết bạn theo requestId và trở thành bạn bè.",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "description": "ID của Friend Request cần chấp nhận",
+            "schema": {
+              "type": "string",
+              "example": "660c223a2f4c9c1b8a777666"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chấp nhận thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Yêu cầu kết bạn đã được chấp nhận thành công",
+                  "newFriend": {
+                    "_id": "660c1d5b2f4c9c1b8a111222",
+                    "displayName": "Le Thi C",
+                    "userName": "lethic",
+                    "avatarUrl": "",
+                    "email": "lethic@gmail.com"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ID yêu cầu không hợp lệ"
+          },
+          "403": {
+            "description": "Không có quyền chấp nhận yêu cầu này"
+          },
+          "404": {
+            "description": "Yêu cầu kết bạn không tồn tại"
+          }
+        }
+      }
+    },
+    "/friends/requests/{requestId}/decline": {
+      "post": {
+        "tags": ["Friends"],
+        "summary": "Từ chối lời mời kết bạn",
+        "description": "Từ chối và xóa yêu cầu kết bạn theo requestId.",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "description": "ID của Friend Request cần từ chối",
+            "schema": {
+              "type": "string",
+              "example": "660c223a2f4c9c1b8a777666"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Từ chối thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Đã từ chối yêu cầu kết bạn"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ID yêu cầu không hợp lệ"
+          },
+          "403": {
+            "description": "Không có quyền từ chối yêu cầu này"
+          },
+          "404": {
+            "description": "Yêu cầu kết bạn không tồn tại"
+          }
+        }
+      }
+    },
+    "/messages/direct": {
+      "post": {
+        "tags": ["Messages"],
+        "summary": "Gửi tin nhắn trực tiếp 1-1",
+        "description": "Gửi tin nhắn tới bạn bè. Yêu cầu hai người phải là bạn bè.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "recipientId": {
+                    "type": "string",
+                    "description": "ID của người nhận (nếu chưa có conversationId)",
+                    "example": "660c1d5b2f4c9c1b8a654321"
+                  },
+                  "conversationId": {
+                    "type": "string",
+                    "description": "ID của cuộc trò chuyện direct (tùy chọn)",
+                    "example": "660c333a2f4c9c1b8a111222"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Nội dung tin nhắn",
+                    "example": "Chào bạn, hôm nay có rảnh không?"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Gửi tin nhắn thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": {
+                    "_id": "660c444a2f4c9c1b8a333444",
+                    "conversationId": "660c333a2f4c9c1b8a111222",
+                    "senderId": "660c1d5b2f4c9c1b8a123456",
+                    "content": "Chào bạn, hôm nay có rảnh không?",
+                    "createdAt": "2026-09-07T15:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu nội dung hoặc ID người nhận"
+          },
+          "403": {
+            "description": "Hai người chưa phải là bạn bè"
+          }
+        }
+      }
+    },
+    "/messages/group": {
+      "post": {
+        "tags": ["Messages"],
+        "summary": "Gửi tin nhắn nhóm",
+        "description": "Gửi tin nhắn vào một nhóm trò chuyện. Người gửi phải là thành viên trong nhóm.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["conversationId", "content"],
+                "properties": {
+                  "conversationId": {
+                    "type": "string",
+                    "description": "ID cuộc trò chuyện nhóm",
+                    "example": "660c555a2f4c9c1b8a555666"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Nội dung tin nhắn nhóm",
+                    "example": "Mọi người đã check tài liệu chưa?"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Gửi tin nhắn nhóm thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": {
+                    "_id": "660c666a2f4c9c1b8a777888",
+                    "conversationId": "660c555a2f4c9c1b8a555666",
+                    "senderId": "660c1d5b2f4c9c1b8a123456",
+                    "content": "Mọi người đã check tài liệu chưa?",
+                    "createdAt": "2026-09-07T15:05:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu thông tin hoặc nội dung"
+          },
+          "403": {
+            "description": "Bạn không phải là thành viên của nhóm này"
+          }
+        }
+      }
+    },
+    "/conversations": {
+      "get": {
+        "tags": ["Conversations"],
+        "summary": "Lấy danh sách các cuộc trò chuyện",
+        "description": "Lấy danh sách tất cả các cuộc trò chuyện (cả direct và group) của user hiện tại, sắp xếp theo tin nhắn mới nhất.",
+        "responses": {
+          "200": {
+            "description": "Danh sách các cuộc trò chuyện",
+            "content": {
+              "application/json": {
+                "example": {
+                  "conversations": [
+                    {
+                      "_id": "660c333a2f4c9c1b8a111222",
+                      "type": "direct",
+                      "participants": [
+                        {
+                          "_id": "660c1d5b2f4c9c1b8a654321",
+                          "displayName": "Nguyen Van A",
+                          "avatarUrl": null
+                        }
+                      ],
+                      "lastMessage": {
+                        "content": "Chào bạn, hôm nay có rảnh không?",
+                        "senderId": {
+                          "_id": "660c1d5b2f4c9c1b8a123456",
+                          "displayName": "Tran Thang"
+                        }
+                      },
+                      "lastMessageAt": "2026-09-07T15:00:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Conversations"],
+        "summary": "Tạo cuộc trò chuyện mới (Direct hoặc Group)",
+        "description": "Tạo cuộc trò chuyện mới. Với type direct thì memberIds gồm 1 ID bạn bè; với type group thì cần name và memberIds.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "memberIds"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["direct", "group"],
+                    "example": "group"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Tên nhóm (bắt buộc nếu type là group)",
+                    "example": "Team Dự Án Chirp"
+                  },
+                  "memberIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Danh sách User ID của các thành viên",
+                    "example": ["660c1d5b2f4c9c1b8a654321", "660c1d5b2f4c9c1b8a111222"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tạo cuộc trò chuyện thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "conversation": {
+                    "_id": "660c555a2f4c9c1b8a555666",
+                    "type": "group",
+                    "group": {
+                      "name": "Team Dự Án Chirp",
+                      "createdBy": "660c1d5b2f4c9c1b8a123456"
+                    },
+                    "participants": [
+                      {
+                        "userId": {
+                          "_id": "660c1d5b2f4c9c1b8a123456",
+                          "displayName": "Tran Thang",
+                          "userName": "thangtran"
+                        }
+                      }
+                    ],
+                    "lastMessageAt": "2026-09-07T15:10:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ hoặc thiếu tên nhóm / thành viên"
+          }
+        }
+      }
+    },
+    "/conversations/{conversationId}/messages": {
+      "get": {
+        "tags": ["Conversations"],
+        "summary": "Lấy lịch sử tin nhắn trong cuộc trò chuyện",
+        "description": "Lấy danh sách tin nhắn theo phân trang (cursor-based pagination).",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "description": "ID cuộc trò chuyện",
+            "schema": {
+              "type": "string",
+              "example": "660c333a2f4c9c1b8a111222"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Số lượng tin nhắn muốn lấy (mặc định 50)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "example": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Mốc thời gian ISO (createdAt) để tải trang tin nhắn cũ hơn",
+            "schema": {
+              "type": "string",
+              "example": "2026-09-07T14:30:00.000Z"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lấy tin nhắn thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "messages": [
+                    {
+                      "_id": "660c444a2f4c9c1b8a333444",
+                      "conversationId": "660c333a2f4c9c1b8a111222",
+                      "senderId": "660c1d5b2f4c9c1b8a123456",
+                      "content": "Chào bạn!",
+                      "createdAt": "2026-09-07T15:00:00.000Z"
+                    }
+                  ],
+                  "nextCursor": "2026-09-07T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Lỗi server"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Nhập JWT Access Token vào ô dưới đây (ví dụ: eyJhbGciOiJIUzI1Ni...)"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
