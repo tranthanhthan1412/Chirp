@@ -4,8 +4,16 @@ import SignUpPage from "./pages/SignUpPage";
 import ChatAppPage from "./pages/ChatAppPage";
 import { Toaster } from "sonner";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { useThemeStore } from "./stores/useThemestore";
+import { useEffect } from "react";
 
 function App() {
+  const { isDark, setTheme } = useThemeStore();
+
+  useEffect(() => {
+    setTheme(isDark);
+  }, [isDark]);
+
   return (
     <>
       {/* Thêm richColors và có thể tùy chọn vị trí hiển thị (vd: top-right hoặc top-center) */}
