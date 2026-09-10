@@ -2,8 +2,10 @@ import type { Conversation } from "@/types/chat";
 import ChatCard from "./ChatCard";
 import { useAuthStore } from "@/stores/useAuthstore";
 import { useChatStore } from "@/stores/useChatstore";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserAvatar from "./UserAvatar";
+import StatusBadge from "./StatusBadge";
 import { cn } from "@/lib/utils";
+import UnreadCountBadge from "./UnreadCountBadge";
 
 const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
     const { user } = useAuthStore();
@@ -14,7 +16,7 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
     const otherUser = convo.participants.find((p) => p._id !== user._id);
     if (!otherUser) return null;
 
-    const unreadCount = convo.unreadCounts?.[user._id] || 0;
+    const unreadCount = convo.unreadCounts?.[user._id] ?? convo.unreadCounts?.["test-user"] ?? 0;
     const lastMessage = convo.lastMessage?.content ?? "";
 
     const handleSelectConversation = async (id: string) => {
@@ -33,12 +35,18 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
             onSelect={handleSelectConversation}
             unreadCount={unreadCount}
             leftSection={
-                <Avatar size="default">
-                    <AvatarImage src={otherUser.avatarUrl || undefined} alt={otherUser.displayName} />
-                    <AvatarFallback>
-                        {otherUser.displayName ? otherUser.displayName.charAt(0).toUpperCase() : "U"}
-                    </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                    <UserAvatar
+                        type="sidebar"
+                        name={otherUser.displayName ?? ""}
+                        avatarUrl={otherUser.avatarUrl ?? undefined}
+                    />
+                    {/* //TODO: socket io*/}
+                    <StatusBadge status="offline" />
+                    {
+                        unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />
+                    }
+                </div>
             }
             subTitle={
                 <p className={cn("text-xs truncate", unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground")}>

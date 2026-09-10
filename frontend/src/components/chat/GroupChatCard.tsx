@@ -2,9 +2,9 @@ import type { Conversation } from "@/types/chat";
 import ChatCard from "./ChatCard";
 import { useAuthStore } from "@/stores/useAuthstore";
 import { useChatStore } from "@/stores/useChatstore";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import UnreadCountBadge from "./UnreadCountBadge";
+import GroupChatAvatar from "./GroupChatAvatar";
 
 const GroupChatCard = ({ convo }: { convo: Conversation }) => {
     const { user } = useAuthStore();
@@ -13,7 +13,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
     if (!user) return null;
 
     const groupName = convo.group?.name || "Nhóm trò chuyện";
-    const unreadCount = convo.unreadCounts?.[user._id] || 0;
+    const unreadCount = convo.unreadCounts?.[user._id] ?? convo.unreadCounts?.["test-user"] ?? 0;
 
     const getLastMessagePreview = () => {
         if (!convo.lastMessage) return "Chưa có tin nhắn nào";
@@ -38,15 +38,14 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
             onSelect={handleSelectConversation}
             unreadCount={unreadCount}
             leftSection={
-                <Avatar size="default">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                        <Users className="size-4" />
-                    </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                    {unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />}
+                    <GroupChatAvatar participants={convo.participants} type="sidebar" />
+                </div>
             }
             subTitle={
-                <p className="text-sm truncate text-muted-foreground">
-                    {convo.participants.length} thành viên
+                <p className={cn("text-xs truncate", unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground")}>
+                    {getLastMessagePreview()}
                 </p>
             }
         />
