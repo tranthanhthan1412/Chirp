@@ -20,20 +20,19 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import { ChevronsUpDownIcon, Bell, UserIcon, LogOutIcon } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthstore"
+import type { User } from "@/types/user"
+import Logout from "../auth/Logout"
 
 export function NavUser({
   user,
 }: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
+  user: User
 }) {
   const { isMobile } = useSidebar()
   const { signOut } = useAuthStore()
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -44,11 +43,11 @@ export function NavUser({
             }
           >
             <Avatar>
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+              <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+              <AvatarFallback>{user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
+              <span className="truncate font-medium">{user.displayName || user.username}</span>
               <span className="truncate text-xs">{user.email}</span>
             </div>
             <ChevronsUpDownIcon className="ml-auto size-4" />
@@ -63,11 +62,11 @@ export function NavUser({
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar>
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+                    <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                    <AvatarFallback>{user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="truncate font-medium">{user.displayName || user.username}</span>
                     <span className="truncate text-xs">{user.email}</span>
                   </div>
                 </div>
@@ -75,35 +74,18 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <SparklesIcon
-                />
-                Upgrade to Pro
+              <DropdownMenuItem className="cursor-pointer">
+                <UserIcon className="size-4 text-muted-foreground" />
+                Tài khoản
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <Bell className="size-4 text-muted-foreground" />
+                Thông báo
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheckIcon
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
-              <LogOutIcon
-              />
-              Log out
+            <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer" variant="destructive">
+              <Logout />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

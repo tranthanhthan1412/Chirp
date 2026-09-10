@@ -24,19 +24,8 @@ import { useThemeStore } from '@/stores/useThemestore';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
-  const user = useAuthStore((state) => state.user);
+  const { user } = useAuthStore();
 
-  const currentUser = user
-    ? {
-      name: user.displayName || user.username,
-      email: user.email,
-      avatar: user.avatarUrl || "/avatars/shadcn.jpg",
-    }
-    : {
-      name: "Guest",
-      email: "guest@chirp.com",
-      avatar: "",
-    };
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -106,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       {/* Footer */}
       <SidebarFooter>
-        <NavUser user={currentUser} />
+        {user && <NavUser user={user} />}
       </SidebarFooter>
     </Sidebar>
   );

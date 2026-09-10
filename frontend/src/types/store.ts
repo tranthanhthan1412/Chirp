@@ -25,14 +25,17 @@ export interface ThemeState {
 export interface ChatState {
     conversations: Conversation[];
     messages: Record<string, {
-        items: Message[],
-        hasMore: boolean, // infinite scroll
-        nextCursor: string | null, // phan trang
+        items: Message[];
+        hasMore: boolean; // infinite scroll
+        nextCursor: string | null; // phan trang
     }>;
     activeConversationId: string | null;
-    loading: boolean,
-    reset: () => void,
+    convoLoading: boolean; // convo loading
+    messageLoading: boolean;
+    reset: () => void;
     setActiveConversationId: (id: string | null) => void;
     fetchConversations: () => Promise<void>;
+    fetchMessages: (conversationId?: string) => Promise<void>;
 }
+
 
