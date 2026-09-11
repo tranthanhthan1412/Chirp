@@ -1,33 +1,39 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
-import { MessageSquare } from "lucide-react";
+import { useChatStore } from "@/stores/useChatstore";
+import ChatWelcomeScreen from "./ChatWelcomeScreen";
+import ChatWindowSkeleton from "./ChatWindowSkeleton";
+import ChatWindowHeader from "./ChatWindowHeader";
+import ChatWindowBody from "./ChatWindowBody";
+import MessageInput from "./MessageInput";
 
-export function ChatWindowLayout() {
+const ChatWindowLayout = () => {
+  const { activeConversationId, conversations, messageLoading: loading, messages } = useChatStore();
+
+  const selectedConvo = conversations.find((c) => c._id === activeConversationId) ?? null;
+
+  if (!activeConversationId) {
+    return <ChatWelcomeScreen />;
+  }
+
+  if (loading) {
+    return <ChatWindowSkeleton />
+  }
+
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-background">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>Messages</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </header>
-      <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-muted/60 mb-4 shadow-sm">
-          <MessageSquare className="size-7 text-muted-foreground" />
-        </div>
-        <h2 className="text-xl font-semibold tracking-tight">Welcome to Chirp</h2>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          Select a conversation from the sidebar or start a new chat to begin messaging with your friends.
-        </p>
+    <div className="flex flex-col h-full flex-1 overflow-hidden rounded-sm shadow-md">
+      {/* TODO: Add ChatHeader */}
+      <ChatWindowHeader />
+
+      {/* Message Area */}
+      <div className="flex-1 overflow-y-auto bg-primary-foreground">
+        <ChatWindowBody />
       </div>
+
+      {/* TODO: Add Input Area */}
+      <MessageInput />
     </div>
   );
-}
+
+
+};
 
 export default ChatWindowLayout;
