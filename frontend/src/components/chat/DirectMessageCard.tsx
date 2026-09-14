@@ -22,7 +22,7 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
     const handleSelectConversation = async (id: string) => {
         setActiveConversationId(id);
         if (!messages[id]) {
-            await fetchMessages();
+            await fetchMessages(id);
         }
     };
 

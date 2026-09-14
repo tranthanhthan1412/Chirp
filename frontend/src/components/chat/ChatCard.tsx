@@ -35,8 +35,10 @@ const ChatCard = ({
         <Card
             key={convoId}
             className={cn(
-                "group relative border-none p-2.5 cursor-pointer transition-all duration-150 hover:bg-muted/50 rounded-xl shadow-none",
-                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-xs ring-1 ring-border"
+                "group relative border-none p-2.5 cursor-pointer transition-all duration-150 rounded-xl shadow-none",
+                isActive
+                    ? "bg-primary/10 text-sidebar-accent-foreground font-medium ring-2 ring-primary shadow-sm hover:bg-primary/15"
+                    : "hover:bg-muted/50"
             )}
             onClick={handleSelect}
         >
