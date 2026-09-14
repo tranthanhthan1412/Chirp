@@ -36,7 +36,7 @@ export const formatMessageTime = (date: Date) => {
     date.getMonth() === now.getMonth() &&
     date.getFullYear() === now.getFullYear();
 
-  const yesterday = new Date();
+  const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   const isYesterday =
     date.getDate() === yesterday.getDate() &&
@@ -50,14 +50,40 @@ export const formatMessageTime = (date: Date) => {
   });
 
   if (isToday) {
-    return timeStr; // ví dụ: "14:35"
+    return timeStr; // ví dụ: "22:30"
   } else if (isYesterday) {
-    return `Hôm qua ${timeStr}`; // ví dụ: "Hôm qua 23:10"
+    return `Hôm qua ${timeStr}`; // ví dụ: "Hôm qua 22:30"
+  } else if (now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
+    const weekday = date.toLocaleDateString("vi-VN", { weekday: "short" });
+    return `${weekday} ${timeStr}`; // ví dụ: "Th 4 22:30"
   } else if (date.getFullYear() === now.getFullYear()) {
-    return `${date.getDate()}/${date.getMonth() + 1} ${timeStr}`; // ví dụ: "22/9 09:15"
+    return `${date.getDate()} thg ${date.getMonth() + 1}, ${timeStr}`; // ví dụ: "11 thg 9, 22:30"
   } else {
-    return `${date.getDate()}/${
-      date.getMonth() + 1
-    }/${date.getFullYear()} ${timeStr}`; // ví dụ: "15/12/2023 18:40"
+    return `${date.getDate()} thg ${date.getMonth() + 1}, ${date.getFullYear()} ${timeStr}`; // ví dụ: "15 thg 12, 2023 18:40"
   }
 };
+
+export const isSameDay = (d1: Date, d2: Date) => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
+
+export const formatDateSeparator = (date: Date) => {
+  const now = new Date();
+  if (isSameDay(date, now)) return "Hôm nay";
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  if (isSameDay(date, yesterday)) return "Hôm qua";
+
+  return date.toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+  });
+};
+

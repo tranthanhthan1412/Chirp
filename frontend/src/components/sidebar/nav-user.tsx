@@ -20,7 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, Bell, UserIcon, LogOutIcon } from "lucide-react"
+import { ChevronsUpDownIcon, Bell, UserIcon } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthstore"
 import type { User } from "@/types/user"
 import Logout from "../auth/Logout"
