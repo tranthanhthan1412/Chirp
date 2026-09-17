@@ -1,15 +1,15 @@
 import Message from "../models/Message.js";
 import Conversation from "../models/Conversation.js";
-import { updateConversationAfterCreateMessage } from "../untils/MessageHelper.js";
-
+import { emitNewMessage, updateConversationAfterCreateMessage } from "../untils/MessageHelper.js";
+import { io } from "../socket/index.js";
 
 export const sendDirectMessage = async (req, res) => {
     try {
-        const { recipientId, content, conversationId } = req.body;
+        const { recipientId, content, conversationId, imgUrl } = req.body;
         const senderId = req.user._id;
 
-        if (!content || !content.trim()) {
-            return res.status(400).json({ message: "Thiếu nội dung tin nhắn" });
+        if ((!content || !content.trim()) && !imgUrl) {
+            return res.status(400).json({ message: "Thiếu nội dung tin nhắn hoặc hình ảnh" });
         }
 
         let conversation;
@@ -50,10 +50,14 @@ export const sendDirectMessage = async (req, res) => {
         const message = await Message.create({
             conversationId: conversation._id,
             senderId: senderId,
-            content,
+            content: content?.trim() || "",
+            imgUrl: imgUrl || undefined,
         });
 
         await updateConversationAfterCreateMessage(conversation, message, senderId);
+
+        // emit new message
+        emitNewMessage(io, conversation, message, req.user);
 
         return res.status(201).json({ message });
     } catch (error) {
@@ -61,24 +65,28 @@ export const sendDirectMessage = async (req, res) => {
         return res.status(500).json({ message: "Lỗi khi gửi tin nhắn" });
     }
 };
+
 export const sendGroupMessage = async (req, res) => {
     try {
-        const { conversationId, content } = req.body;
+        const { conversationId, content, imgUrl } = req.body;
         const senderId = req.user._id;
         const conversation = req.conversation;
 
-        if (!content) {
-            return res.status(400).json({ message: "Thiếu nội dung tin nhắn" });
+        if ((!content || !content.trim()) && !imgUrl) {
+            return res.status(400).json({ message: "Thiếu nội dung tin nhắn hoặc hình ảnh" });
         }
 
         const message = await Message.create({
             conversationId,
             senderId,
-            content
+            content: content?.trim() || "",
+            imgUrl: imgUrl || undefined,
         });
 
         await updateConversationAfterCreateMessage(conversation, message, senderId);
-        await conversation.save();
+
+        // emit new message
+        emitNewMessage(io, conversation, message, req.user);
 
         return res.status(201).json({ message });
     } catch (error) {

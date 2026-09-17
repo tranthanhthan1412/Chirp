@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { ConversationResponse, Message } from "@/types/chat";
+import type { ConversationResponse, Message, ReadReceipt } from "@/types/chat";
 
 export interface FetchMessagesResponse {
   messages: Message[];
@@ -9,6 +9,10 @@ export interface FetchMessagesResponse {
 const pageLimit = 50;
 
 export const chatService = {
+  async markConversationRead(id: string): Promise<ReadReceipt> {
+    const res = await api.patch("/conversations/" + id + "/read");
+    return res.data;
+  },
   async fetchConversation(): Promise<ConversationResponse> {
     const res = await api.get("/conversations");
     return res.data;

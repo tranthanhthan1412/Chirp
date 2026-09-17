@@ -13,7 +13,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
     if (!user) return null;
 
     const groupName = convo.group?.name || "Nhóm trò chuyện";
-    const unreadCount = convo.unreadCounts?.[user._id] ?? convo.unreadCounts?.["test-user"] ?? 0;
+    const unreadCount = convo.unreadCounts?.[user._id] ?? 0;
 
     const getLastMessagePreview = () => {
         if (!convo.lastMessage) return "Chưa có tin nhắn nào";
@@ -24,7 +24,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
 
     const handleSelectConversation = async (id: string) => {
         setActiveConversationId(id);
-        if (!messages[id]) {
+        if (messages[id]?.nextCursor === undefined) {
             await fetchMessages(id);
         }
     };

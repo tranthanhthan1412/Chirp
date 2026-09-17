@@ -32,7 +32,7 @@ const ChatWindowBody = () => {
     if (!lastMessage) return;
 
     const seenBy = selectedConvo?.seenBy ?? [];
-    setLastMessageStatus(seenBy.length > 0 ? "seen" : "delivered");
+    setLastMessageStatus(seenBy.some(u => u._id !== lastMessage.sender?._id) ? "seen" : "delivered");
   }, [selectedConvo]);
 
   // Tự động cuộn xuống tin nhắn mới nhất khi đổi phòng chat

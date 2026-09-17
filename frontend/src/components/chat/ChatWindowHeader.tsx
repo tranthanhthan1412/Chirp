@@ -6,10 +6,12 @@ import { Separator } from "../ui/separator";
 import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
+import { useSocketStore } from "@/stores/useSocketStore";
 
 const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     const { conversations, activeConversationId } = useChatStore();
     const { user } = useAuthStore();
+    const { onlineUsers } = useSocketStore();
 
     const currentChat = chat ?? conversations.find((c) => c._id === activeConversationId);
 
@@ -29,13 +31,14 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     let otherUser = null;
     let title = "";
     let subTitle = "";
+    let isOnline = false;
 
     if (currentChat.type === "direct") {
         const otherUsers = currentChat.participants?.filter((p) => p._id !== user?._id) ?? [];
         otherUser = otherUsers.length > 0 ? otherUsers[0] : (currentChat.participants?.[0] ?? null);
         title = otherUser?.displayName || "Người dùng";
-        // TODO: socket io - status text
-        subTitle = "Ngoại tuyến";
+        isOnline = otherUser?._id ? onlineUsers.includes(otherUser._id) : false;
+        subTitle = isOnline ? "Đang hoạt động" : "Ngoại tuyến";
     } else {
         title = currentChat.group?.name || "Nhóm trò chuyện";
         const memberCount = currentChat.participants?.length || 0;
@@ -61,8 +64,7 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
                                     name={title}
                                     avatarUrl={otherUser?.avatarUrl || undefined}
                                 />
-                                {/* TODO: socket io */}
-                                <StatusBadge status="offline" />
+                                <StatusBadge status={isOnline ? "online" : "offline"} />
                             </>
                         ) : (
                             <GroupChatAvatar

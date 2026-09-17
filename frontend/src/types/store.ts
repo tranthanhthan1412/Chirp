@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io-client";
-import type { Conversation, Message } from "./chat";
+import type { Conversation, Message, ReadReceipt } from "./chat";
 import type { User } from "./user";
 
 export interface AuthState {
@@ -28,21 +28,30 @@ export interface ChatState {
     messages: Record<string, {
         items: Message[];
         hasMore: boolean; // infinite scroll
-        nextCursor: string | null; // phan trang
+        nextCursor?: string | null; // phan trang
     }>;
     activeConversationId: string | null;
     convoLoading: boolean; // convo loading
     messageLoading: boolean;
+    markConversationRead: (id: string) => Promise<void>;
+    applyReadReceipt: (receipt: ReadReceipt) => void;
     reset: () => void;
     setActiveConversationId: (id: string | null) => void;
     fetchConversations: () => Promise<void>;
-    fetchMessages: (conversationId?: string) => Promise<void>;
+    fetchMessages: (conversationId?: string, refresh?: boolean) => Promise<void>;
     sendDirectMessage: (recipientId: string, content: string, imgUrl?: string) => Promise<void>;
     sendGroupMessage: (conversationId: string, content: string, imgUrl?: string) => Promise<void>;
+    // add message
+    addMessage: (message: Message) => Promise<void>;
+
+
+    // update convo
+    updateConversation: (conversation: Partial<Conversation> & { _id: string }) => void;
 }
 
 export interface SocketState {
     socket: Socket | null;
+    onlineUsers: string[];
     connectSocket: () => void;
     disconnectSocket: () => void;
 }

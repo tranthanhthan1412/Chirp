@@ -54,3 +54,9 @@ export interface Message {
   createdAt: string;
   isOwn?: boolean;
 }
+
+export interface ReadReceipt {
+  conversationId: string;
+  userId: string;
+  lastMessageId: string | null;
+}
