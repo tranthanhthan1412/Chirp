@@ -26,7 +26,7 @@ export const protectedRoute = async (req, res, next) => {
         next();
     } catch (error) {
         if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-            return res.status(403).json({ message: 'Access token hết hạn hoặc không đúng' });
+            return res.status(403).json({ code: 'ACCESS_TOKEN_INVALID', message: 'Access token hết hạn hoặc không đúng' });
         }
         console.error('Lỗi khi xác minh JWT trong authMiddleware:', error);
         return res.status(500).json({ message: 'Lỗi hệ thống' });

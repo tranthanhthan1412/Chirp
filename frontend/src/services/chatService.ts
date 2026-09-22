@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { ConversationResponse, Message, ReadReceipt } from "@/types/chat";
+import type { Conversation, ConversationResponse, Message, ReadReceipt } from "@/types/chat";
 
 export interface FetchMessagesResponse {
   messages: Message[];
@@ -9,6 +9,9 @@ export interface FetchMessagesResponse {
 const pageLimit = 50;
 
 export const chatService = {
+  async createConversation(type: "direct" | "group", memberIds: string[], name?: string): Promise<Conversation> {
+    return (await api.post("/conversations", { type, memberIds, name })).data.conversation;
+  },
   async markConversationRead(id: string): Promise<ReadReceipt> {
     const res = await api.patch("/conversations/" + id + "/read");
     return res.data;
@@ -19,7 +22,7 @@ export const chatService = {
   },
 
   async fetchMessage(id: string, cursor?: string): Promise<FetchMessagesResponse> {
-    const res = await api.get(`/conversations/${id}/messages?limit=${pageLimit}${cursor ? `&cursor=${cursor}` : ''}`);
+    const res = await api.get(`/conversations/${id}/messages`, { params: { limit: pageLimit, cursor } });
     return res.data;
   },
 

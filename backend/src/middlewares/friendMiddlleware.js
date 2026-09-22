@@ -1,5 +1,6 @@
 import Conversation from "../models/Conversation.js";
 import Friend from "../models/Friend.js";
+import mongoose from "mongoose";
 
 const pair = (a, b) => {
     const strA = a.toString();
@@ -10,9 +11,28 @@ const pair = (a, b) => {
 export const checkFriendship = async (req, res, next) => {
     try {
         const me = req.user._id;
-        const { type, conversationId } = req.body;
+        // type/memberIds chỉ thuộc API tạo cuộc trò chuyện, không dùng để bỏ qua kiểm tra khi gửi tin.
+        const type = req.baseUrl === "/api/conversations" ? req.body.type : "direct";
+        const { conversationId } = req.body;
         let recipientId = req.body?.recipientId ?? null;
-        let memberIds = req.body?.memberIds ?? [];
+        let memberIds = req.baseUrl === "/api/conversations" ? req.body?.memberIds ?? [] : [];
+
+        if (!Array.isArray(memberIds) || memberIds.some(id => typeof id !== "string" || !mongoose.isValidObjectId(id)) ||
+            (recipientId && !mongoose.isValidObjectId(recipientId)) || (conversationId && !mongoose.isValidObjectId(conversationId))) {
+            return res.status(400).json({ message: "Danh sách thành viên hoặc ID không hợp lệ" });
+        }
+        if (req.baseUrl === "/api/conversations" && type === "direct" && memberIds.length !== 1) return res.status(400).json({ message: "Chat riêng cần đúng một người bạn" });
+        if (memberIds.length > 100) return res.status(400).json({ message: "Tối đa 100 người được mời" });
+        if (conversationId) {
+            const conversation = await Conversation.findById(conversationId);
+            if (!conversation || !conversation.participants.some(p => String(p.userId) === String(me))) {
+                return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+            }
+            if (conversation.type !== "direct") return res.status(400).json({ message: "Hãy dùng API tin nhắn nhóm" });
+            const other = conversation.participants.find(p => String(p.userId) !== String(me));
+            if (recipientId && String(other?.userId) !== recipientId) return res.status(400).json({ message: "Người nhận không khớp cuộc trò chuyện" });
+            recipientId = String(other.userId);
+        }
 
         // 1. Trường hợp tạo nhóm (Group)
         if (type === "group" || (Array.isArray(memberIds) && memberIds.length > 1)) {
@@ -104,7 +124,7 @@ export const checkGroupMembership = async (req, res, next) => {
         const { conversationId } = req.body;
         const userId = req.user._id;
 
-        if (!conversationId) {
+        if (!conversationId || !mongoose.isValidObjectId(conversationId)) {
             return res.status(400).json({ message: "Thiếu conversationId" });
         }
 

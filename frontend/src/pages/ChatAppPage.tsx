@@ -14,7 +14,7 @@ const ChatAppPage = () => {
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset className="h-[calc(100vh-1rem)] overflow-hidden">
+            <SidebarInset className="h-[calc(100dvh-1rem)] overflow-hidden">
                 <ChatWindowLayout />
             </SidebarInset>
         </SidebarProvider>

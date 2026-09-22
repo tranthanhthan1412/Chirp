@@ -14,7 +14,7 @@ export const updateConversation = async (conversation, message, senderId) => {
             ["unreadCount." + senderId]: 0,
         },
         $inc: increments,
-    }, { new: true });
+    }, { returnDocument: 'after' });
     conversation.set(updated.toObject());
     return conversation;
 };

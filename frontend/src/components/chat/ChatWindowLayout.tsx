@@ -22,11 +22,11 @@ const ChatWindowLayout = () => {
 
       {/* Vùng hiển thị tin nhắn */}
       <div className="flex-1 flex flex-col min-h-0 bg-primary-foreground overflow-hidden">
-        <ChatWindowBody />
+        <ChatWindowBody key={activeConversationId} />
       </div>
 
       {/* Khung nhập tin nhắn */}
-      <MessageInput selectedConvo={selectedConvo} />
+      <MessageInput key={activeConversationId} selectedConvo={selectedConvo} />
     </div>
   );
 };

@@ -2,11 +2,15 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 import Friend from "../models/Friend.js";
+import { io } from "../socket/index.js";
 // 1. Gửi lời mời kết bạn
 export const sendFriendRequest = async (req, res) => {
     try {
         const { to, message } = req.body;
         const from = req.user._id;
+        if (message !== undefined && (typeof message !== "string" || message.length > 300)) {
+            return res.status(400).json({ message: "Lời nhắn tối đa 300 ký tự" });
+        }
         if (!to) {
             return res.status(400).json({ message: 'Vui lòng cung cấp ID người nhận' });
         }
@@ -54,6 +58,7 @@ export const sendFriendRequest = async (req, res) => {
             to,
             message
         });
+        io.to([String(from), String(to)]).emit("friends-updated");
         return res.status(201).json({
             message: 'Yêu cầu kết bạn đã được gửi thành công',
             request
@@ -87,9 +92,10 @@ export const acceptFriendRequest = async (req, res) => {
         // Chuẩn hóa thứ tự userA, userB
         const [userA, userB] = [request.from.toString(), request.to.toString()].sort();
         // Tạo quan hệ bạn bè
-        const friend = await Friend.create({ userA, userB });
+        await Friend.updateOne({ userA, userB }, { $setOnInsert: { userA, userB } }, { upsert: true });
         // Xóa yêu cầu kết bạn
         await FriendRequest.findByIdAndDelete(requestId);
+        io.to([String(request.from), String(request.to)]).emit("friends-updated");
         // Lấy thông tin người gửi lời mời
         const fromUser = await User.findById(request.from)
             .select('_id displayName userName avatarUrl email')
@@ -126,6 +132,7 @@ export const declineFriendRequest = async (req, res) => {
         }
         // Xóa yêu cầu kết bạn
         await FriendRequest.findByIdAndDelete(requestId);
+        io.to([String(request.from), String(request.to)]).emit("friends-updated");
         return res.status(200).json({
             message: 'Đã từ chối yêu cầu kết bạn'
         });

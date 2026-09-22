@@ -2,6 +2,8 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";
 import mongoose from "mongoose";
+import { messagePage, messagePageQuery } from "../untils/pagination.js";
+import { serializeConversation } from "../untils/serializeConversation.js";
 
 
 
@@ -18,7 +20,7 @@ export const createConversation = async (req, res) => {
             return res.status(400).json({ message: "Danh sách thành viên (memberIds) là bắt buộc" });
         }
 
-        if (type === "group" && (!name || !name.trim())) {
+        if (type === "group" && (typeof name !== "string" || !name.trim() || name.trim().length > 80)) {
             return res.status(400).json({ message: "Tên nhóm là bắt buộc" });
         }
 
@@ -68,7 +70,10 @@ export const createConversation = async (req, res) => {
             { path: "group.createdBy", select: "displayName userName avatarUrl" }
         ]);
 
-        return res.status(201).json({ conversation });
+        const formatted = serializeConversation(conversation);
+        // Phòng cá nhân luôn tồn tại, kể cả khi người nhận chưa mở nhóm mới.
+        io.to(formatted.participants.map(p => p._id)).emit("conversation-created", formatted);
+        return res.status(201).json({ conversation: formatted });
 
     } catch (error) {
         console.error("Lỗi khi tạo conversation: ", error);
@@ -147,26 +152,13 @@ export const getCoversations = async (req, res) => {
 export const getMessages = async (req, res) => {
     try {
         const { conversationId } = req.params;
-        const { limit = 50, cursor } = req.query;
-
-        const query = { conversationId };
-        if (cursor) {
-            query.createdAt = { $lt: new Date(cursor) }
-        }
-
-        let messages = await Message.find(query).sort({ createdAt: -1 })
-            .sort({ createdAt: -1 })
-            .limit(Number(limit) + 1);
-
-        let nextCursor = null;
-
-        if (messages.length > Number(limit)) {
-            const nextMessage = messages[messages.length - 1];
-            nextCursor = nextMessage.createdAt.toISOString();
-            messages.pop();
-        }
-        messages = messages.reverse();
-        return res.status(200).json({ messages, nextCursor });
+        let page;
+        try { page = messagePageQuery(conversationId, req.query.cursor, req.query.limit); }
+        catch (error) { return res.status(400).json({ message: error.message }); }
+        const member = await Conversation.exists({ _id: conversationId, "participants.userId": req.user._id });
+        if (!member) return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+        const rows = await Message.find(page.query).sort({ createdAt: -1, _id: -1 }).limit(page.limit + 1);
+        return res.status(200).json(messagePage(rows, page.limit));
     } catch (error) {
         console.error("Lỗi khi lấy tin nhắn:", error);
         return res.status(500).json({ message: "Lỗi server" });
@@ -197,7 +189,7 @@ export const markConversationRead = async (req, res) => {
         const conversation = await Conversation.findOneAndUpdate(
             { _id: conversationId, "participants.userId": req.user._id },
             { $set: { ["unreadCount." + userId]: 0 }, $addToSet: { seenBy: req.user._id } },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!conversation) return res.status(404).json({ message: "Conversation not found" });
         const receipt = { conversationId, userId, lastMessageId: conversation.lastMessage?._id ?? null };

@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { authService } from "@/services/authService";
 import type { AuthState } from "@/types/store";
 import { persist } from "zustand/middleware";
+import { useFriendStore } from "./useFriendStore";
+import { useSocketStore } from "./useSocketStore";
 
 
 export const useAuthStore = create<AuthState>()(persist(
@@ -17,7 +19,8 @@ export const useAuthStore = create<AuthState>()(persist(
         },
         clearState: () => {
             set({ accessToken: null, user: null, loading: false });
-            localStorage.clear(); // Xóa luôn state trong localstorage
+            useSocketStore.getState().disconnectSocket();
+            useFriendStore.getState().reset();
             useChatStore.getState().reset();
         },
 
@@ -43,7 +46,8 @@ export const useAuthStore = create<AuthState>()(persist(
             try {
                 set({ loading: true });
 
-                localStorage.clear(); // Xóa luôn state trong localstorage
+                useSocketStore.getState().disconnectSocket();
+                useFriendStore.getState().reset();
                 useChatStore.getState().reset();
 
                 const { accessToken } = await authService.signIn(username, password)

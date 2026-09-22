@@ -24,6 +24,10 @@ import { ChevronsUpDownIcon, Bell, UserIcon } from "lucide-react"
 import { useAuthStore } from "@/stores/useAuthstore"
 import type { User } from "@/types/user"
 import Logout from "../auth/Logout"
+import { useState } from "react"
+import ProfileDialog from "../profile/ProfileDialog"
+import FriendRequestDialog from "../chat/FriendRequestDialog"
+import { useFriendStore } from "@/stores/useFriendStore"
 
 export function NavUser({
   user,
@@ -32,9 +36,12 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { signOut } = useAuthStore()
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [requestsOpen, setRequestsOpen] = useState(false)
+  const requestCount = useFriendStore(s => s.received.length)
 
   return (
-    <SidebarMenu>
+    <><SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -74,13 +81,13 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setProfileOpen(true)}>
                 <UserIcon className="size-4 text-muted-foreground" />
                 Tài khoản
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setRequestsOpen(true)}>
                 <Bell className="size-4 text-muted-foreground" />
-                Thông báo
+                Lời mời kết bạn {requestCount > 0 && `(${requestCount})`}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -91,5 +98,8 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+    <ProfileDialog open={profileOpen} setOpen={setProfileOpen} />
+    <FriendRequestDialog open={requestsOpen} setOpen={setRequestsOpen} />
+    </>
   )
 }

@@ -11,7 +11,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/sidebar/nav-user";
 import { useAuthStore } from "@/stores/useAuthstore";
@@ -21,10 +20,19 @@ import GroupChatList from '../chat/GroupChatList';
 import AddFriendModal from '../chat/AddFriendModal';
 import DirectMessageList from '../chat/DirectMessageList';
 import { useThemeStore } from '@/stores/useThemestore';
+import { useChatStore } from '@/stores/useChatstore';
+import ConversationSkeleton from '../chat/ConversationSkeleton';
+import { useFriendStore } from '@/stores/useFriendStore';
+import FriendRequestDialog from '../chat/FriendRequestDialog';
+import { Button } from '../ui/button';
+import { Bell } from 'lucide-react';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
   const { user } = useAuthStore();
+  const convoLoading = useChatStore(s => s.convoLoading);
+  const requestCount = useFriendStore(s => s.received.length);
+  const [requestsOpen, setRequestsOpen] = React.useState(false);
 
 
   return (
@@ -55,20 +63,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <CreateNewChat>
 
             </CreateNewChat>
+            <Button variant="ghost" className="mt-2 w-full justify-start" onClick={() => setRequestsOpen(true)}><Bell className="size-4" />Lời mời kết bạn {requestCount > 0 && <span className="ml-auto rounded-full bg-primary px-2 text-primary-foreground">{requestCount}</span>}</Button>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Group Chat */}
         <SidebarGroup>
-          <SidebarGroupLabel className='uppercase '>
-            Group Chat
+          <div className="flex items-center justify-between"><SidebarGroupLabel className='uppercase '>
+            Nhóm chat
           </SidebarGroupLabel>
-          <SidebarGroupAction title="Tạo nhóm" className="cursor-pointer">
             <NewGroupChatModal />
-          </SidebarGroupAction>
+          </div>
 
           <SidebarGroupContent>
-            <GroupChatList />
+            {convoLoading ? <ConversationSkeleton /> : <GroupChatList />}
           </SidebarGroupContent>
 
 
@@ -76,15 +84,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Direct Chat */}
         <SidebarGroup>
-          <SidebarGroupLabel className='uppercase '>
+          <div className="flex items-center justify-between"><SidebarGroupLabel className='uppercase '>
             Bạn bè
           </SidebarGroupLabel>
-          <SidebarGroupAction title="Kết bạn" className="cursor-pointer">
             <AddFriendModal />
-          </SidebarGroupAction>
+          </div>
 
           <SidebarGroupContent>
-            <DirectMessageList />
+            {convoLoading ? <ConversationSkeleton /> : <DirectMessageList />}
           </SidebarGroupContent>
 
 
@@ -97,6 +104,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         {user && <NavUser user={user} />}
       </SidebarFooter>
+      <FriendRequestDialog open={requestsOpen} setOpen={setRequestsOpen} />
     </Sidebar>
   );
 }

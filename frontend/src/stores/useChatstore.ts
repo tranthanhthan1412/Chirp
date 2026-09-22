@@ -5,8 +5,10 @@ import type { ChatState } from "@/types/store";
 import type { Conversation, Message } from "@/types/chat";
 import { chatService } from "@/services/chatService";
 import { useAuthStore } from "./useAuthstore";
+import { errorMessage } from "@/lib/errorMessage";
 
 
+let generation = 0;
 const mergeMessages = (...lists: Message[][]) =>
     [...new Map(lists.flat().map(message => [message._id, message])).values()]
         .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
@@ -22,10 +24,11 @@ export const useChatStore = create<ChatState>()(
             activeConversationId: null,
             convoLoading: false,
             messageLoading: false,
+            loadingMessages: {},
+            messageErrors: {},
 
             setActiveConversationId: (id: string | null) => {
                 set({ activeConversationId: id });
-                if (id) void get().markConversationRead(id);
             },
             applyReadReceipt: ({ conversationId, userId, lastMessageId }) => {
                 set(state => ({ conversations: state.conversations.map(c => {
@@ -38,34 +41,43 @@ export const useChatStore = create<ChatState>()(
                 }) }));
             },
             markConversationRead: async (id) => {
+                const currentGeneration = generation;
                 const user = useAuthStore.getState().user;
                 if (!user) return;
                 const previous = get().conversations.find(c => c._id === id);
                 get().applyReadReceipt({ conversationId: id, userId: user._id, lastMessageId: previous?.lastMessage?._id ?? null });
                 try {
-                    get().applyReadReceipt(await chatService.markConversationRead(id));
+                    const receipt = await chatService.markConversationRead(id);
+                    if (currentGeneration === generation) get().applyReadReceipt(receipt);
                 } catch (error) {
+                    if (currentGeneration !== generation) return;
                     console.error("Failed to mark conversation read:", error);
                     if (previous) set(state => ({ conversations: state.conversations.map(c =>
                         c._id === id && c.lastMessage?._id === previous.lastMessage?._id
                             ? { ...c, unreadCounts: { ...c.unreadCounts, [user._id]: previous.unreadCounts?.[user._id] ?? 0 }, seenBy: previous.seenBy }
                             : c
                     ) }));
-                    toast.error("Kh?ng th? l?u tr?ng th?i ?? ??c. H?y m? l?i cu?c tr? chuy?n ?? th? l?i.");
+                    toast.error("Không thể lưu trạng thái đã đọc. Hãy mở lại cuộc trò chuyện để thử lại.");
                 }
             },
-            reset: () =>
+            reset: () => {
+                generation++;
                 set({
                     conversations: [],
                     messages: {},
                     activeConversationId: null,
                     convoLoading: false,
                     messageLoading: false,
-                }),
+                    loadingMessages: {},
+                    messageErrors: {},
+                });
+            },
             fetchConversations: async () => {
+                const currentGeneration = generation;
                 try {
                     set({ convoLoading: true });
                     const { conversations } = await chatService.fetchConversation();
+                    if (generation !== currentGeneration) return;
                     set(state => ({
                         conversations: (conversations || []).map(c => {
                             const current = state.conversations.find(item => item._id === c._id);
@@ -80,6 +92,7 @@ export const useChatStore = create<ChatState>()(
                         convoLoading: false,
                     }));
                 } catch (error) {
+                    if (generation !== currentGeneration) return;
                     console.error("Lỗi xảy ra khi fetchConversation:", error);
                     set({ convoLoading: false });
                 }
@@ -90,18 +103,21 @@ export const useChatStore = create<ChatState>()(
 
                 const convoId = conversationId ?? activeConversationId;
                 if (!convoId || !user) return;
+                if (get().loadingMessages[convoId]) return;
+                const currentGeneration = generation;
 
                 const current = messages?.[convoId];
                 const nextCursor = refresh ? "" : current?.nextCursor === undefined ? "" : current?.nextCursor;
 
                 if (nextCursor === null) return;
 
-                set({ messageLoading: true });
+                set(state => ({ messageLoading: true, loadingMessages: { ...state.loadingMessages, [convoId]: true }, messageErrors: { ...state.messageErrors, [convoId]: null } }));
                 try {
                     const { messages: fetched, nextCursor: cursor } = await chatService.fetchMessage(
                         convoId,
                         nextCursor || undefined
                     );
+                    if (generation !== currentGeneration) return;
 
                     const processed = (fetched || []).map((m) => {
                         return {
@@ -126,11 +142,16 @@ export const useChatStore = create<ChatState>()(
                     });
                 } catch (error) {
                     console.error("Lỗi xảy ra khi fetchMessages:", error);
+                    if (generation === currentGeneration) set(state => ({ messageErrors: { ...state.messageErrors, [convoId]: errorMessage(error, "Không tải được tin nhắn") } }));
                 } finally {
-                    set({ messageLoading: false });
+                    if (generation === currentGeneration) set(state => {
+                        const loadingMessages = { ...state.loadingMessages, [convoId]: false };
+                        return { loadingMessages, messageLoading: Object.values(loadingMessages).some(Boolean) };
+                    });
                 }
             },
             sendDirectMessage: async (recipientId, content, imgUrl) => {
+                const currentGeneration = generation;
                 try {
                     const { activeConversationId } = get();
                     const { user } = useAuthStore.getState();
@@ -141,7 +162,7 @@ export const useChatStore = create<ChatState>()(
                         activeConversationId || undefined
                     );
 
-                    if (!message) return;
+                    if (!message || currentGeneration !== generation) return;
 
                     const convoId = message.conversationId;
                     const processedMessage = {
@@ -168,7 +189,7 @@ export const useChatStore = create<ChatState>()(
                                         },
                                     },
                                     lastMessageAt: message.createdAt,
-                                    seenBy: [],
+                                    seenBy: c.lastMessage?._id === message._id ? c.seenBy : [],
                                 }
                                 : c
                         );
@@ -198,9 +219,11 @@ export const useChatStore = create<ChatState>()(
                     });
                 } catch (error) {
                     console.error("Lỗi xảy ra khi sendDirectMessage:", error);
+                    throw error;
                 }
             },
             sendGroupMessage: async (conversationId, content, imgUrl) => {
+                const currentGeneration = generation;
                 try {
                     const { user } = useAuthStore.getState();
                     const message = await chatService.sendGroupMessage(
@@ -209,7 +232,7 @@ export const useChatStore = create<ChatState>()(
                         imgUrl
                     );
 
-                    if (!message) return;
+                    if (!message || currentGeneration !== generation) return;
 
                     const convoId = conversationId;
                     const processedMessage = {
@@ -236,7 +259,7 @@ export const useChatStore = create<ChatState>()(
                                         },
                                     },
                                     lastMessageAt: message.createdAt,
-                                    seenBy: [],
+                                    seenBy: c.lastMessage?._id === message._id ? c.seenBy : [],
                                 }
                                 : c
                         );
@@ -265,6 +288,7 @@ export const useChatStore = create<ChatState>()(
                     });
                 } catch (error) {
                     console.error("Lỗi xảy ra khi sendGroupMessage:", error);
+                    throw error;
                 }
             },
             addMessage: async (message) => {
@@ -288,7 +312,7 @@ export const useChatStore = create<ChatState>()(
 
                     if (exists) {
                         updatedConvos = state.conversations.map((c) =>
-                            c._id === conversation._id && !newer(c, conversation) ? { ...c, ...conversation } : c
+                            c._id === conversation._id && !newer(c, conversation) ? { ...c, ...conversation, seenBy: c.lastMessage?._id === conversation.lastMessage?._id ? [...new Map([...(conversation.seenBy ?? []), ...(c.seenBy ?? [])].map(u => [u._id, u])).values()] : conversation.seenBy ?? [] } : c
                         );
                     } else {
                         updatedConvos = conversation.participants && conversation.type ? [conversation as Conversation, ...state.conversations] : state.conversations;
@@ -313,5 +337,3 @@ export const useChatStore = create<ChatState>()(
         }
     )
 );
-
-

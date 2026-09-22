@@ -5,6 +5,7 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL || (import.meta.env.DEV ? "http://localhost:5001/api" : "/api"),
     withCredentials: true,
 });
+let refreshing: Promise<string> | null = null;
 
 // gan access token vao req header
 api.interceptors.request.use((config) => {
@@ -33,17 +34,16 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        originalRequest._retryCount = originalRequest._retryCount || 0;
-
-        if (error.response?.status === 403 && originalRequest._retryCount < 4) {
-            originalRequest._retryCount++;
-
-            console.log("refresh", originalRequest._retryCount);
+        // 403 do chưa kết bạn/không có quyền không phải lỗi hết hạn token.
+        if (error.response?.data?.code === "ACCESS_TOKEN_INVALID" && !originalRequest._retry) {
+            originalRequest._retry = true;
             try {
-                const res = await api.post("/auth/refresh", {}, { withCredentials: true });
-                const newAccessToken = res.data.accessToken;
-
-                useAuthStore.getState().setAccessToken(newAccessToken);
+                refreshing ??= api.post("/auth/refresh", {}).then(res => {
+                    const token: string = res.data.accessToken;
+                    useAuthStore.getState().setAccessToken(token);
+                    return token;
+                }).finally(() => { refreshing = null; });
+                const newAccessToken = await refreshing;
 
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 return api(originalRequest);

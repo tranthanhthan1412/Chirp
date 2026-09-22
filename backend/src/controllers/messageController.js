@@ -8,6 +8,9 @@ export const sendDirectMessage = async (req, res) => {
         const { recipientId, content, conversationId, imgUrl } = req.body;
         const senderId = req.user._id;
 
+        if ((content !== undefined && typeof content !== "string") || (imgUrl !== undefined && typeof imgUrl !== "string") || (content?.length ?? 0) > 10000) {
+            return res.status(400).json({ message: "Nội dung tin nhắn không hợp lệ (tối đa 10000 ký tự)" });
+        }
         if ((!content || !content.trim()) && !imgUrl) {
             return res.status(400).json({ message: "Thiếu nội dung tin nhắn hoặc hình ảnh" });
         }
@@ -16,6 +19,12 @@ export const sendDirectMessage = async (req, res) => {
 
         if (conversationId) {
             conversation = await Conversation.findById(conversationId);
+            if (!conversation || conversation.type !== "direct" || !conversation.participants.some(p => String(p.userId) === String(senderId))) {
+                return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+            }
+            if (recipientId && !conversation.participants.some(p => String(p.userId) === recipientId)) {
+                return res.status(400).json({ message: "Người nhận không khớp cuộc trò chuyện" });
+            }
         } else if (recipientId) {
             // Tìm conversation direct đã tồn tại giữa 2 người
             conversation = await Conversation.findOne({
@@ -72,6 +81,9 @@ export const sendGroupMessage = async (req, res) => {
         const senderId = req.user._id;
         const conversation = req.conversation;
 
+        if ((content !== undefined && typeof content !== "string") || (imgUrl !== undefined && typeof imgUrl !== "string") || (content?.length ?? 0) > 10000) {
+            return res.status(400).json({ message: "Nội dung tin nhắn không hợp lệ (tối đa 10000 ký tự)" });
+        }
         if ((!content || !content.trim()) && !imgUrl) {
             return res.status(400).json({ message: "Thiếu nội dung tin nhắn hoặc hình ảnh" });
         }

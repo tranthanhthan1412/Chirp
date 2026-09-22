@@ -38,11 +38,6 @@ io.on("connection", async (socket) => {
 
     io.emit("online-users", Array.from(userSockets.keys()));
 
-    const conversationIds = await getUserConversationsForSocketIO(user._id);
-    conversationIds.forEach((id) => {
-        socket.join(id);
-    });
-
     socket.on("disconnect", () => {
         if (userSockets.has(userId)) {
             const sockets = userSockets.get(userId);
@@ -54,6 +49,9 @@ io.on("connection", async (socket) => {
         io.emit("online-users", Array.from(userSockets.keys()));
         console.log(`User ${user.displayName} disconnected: ${socket.id}`);
     });
+
+    const conversationIds = await getUserConversationsForSocketIO(user._id);
+    if (socket.connected) conversationIds.forEach(id => socket.join(id));
 });
 
-export { io, app, server };
+export { io, app, server };

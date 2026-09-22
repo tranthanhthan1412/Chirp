@@ -23,7 +23,7 @@ const messageSchema = new mongoose.Schema({
     timestamps: true
 });
 
-messageSchema.index({ conversationId: 1, createdAt: -1 }); // tao ra 1 bang tra cuu giup viec truy van thong tin message nhanh
+messageSchema.index({ conversationId: 1, createdAt: -1, _id: -1 }); // Khớp thứ tự phân trang.
 
 const Message = mongoose.model("Message", messageSchema);
 export default Message;

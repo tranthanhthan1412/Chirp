@@ -33,6 +33,8 @@ export interface ChatState {
     activeConversationId: string | null;
     convoLoading: boolean; // convo loading
     messageLoading: boolean;
+    loadingMessages: Record<string, boolean>;
+    messageErrors: Record<string, string | null>;
     markConversationRead: (id: string) => Promise<void>;
     applyReadReceipt: (receipt: ReadReceipt) => void;
     reset: () => void;

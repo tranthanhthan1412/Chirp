@@ -112,7 +112,11 @@ export const signOut = async (req, res) => {
             // xoa refresh token trong session trong db
             await Session.deleteOne({ refreshToken: token });
             // xoa refresh token trong cookie
-            res.clearCookie('refreshToken');
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            });
         }
         return res.status(200).json({ message: "Đăng xuất thành công" });
     } catch (error) {

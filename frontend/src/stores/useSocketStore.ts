@@ -3,6 +3,8 @@ import { io } from "socket.io-client";
 import { useAuthStore } from "./useAuthstore";
 import type { SocketState } from "@/types/store";
 import { useChatStore } from "./useChatstore";
+import { useFriendStore } from "./useFriendStore";
+import type { User } from "@/types/user";
 
 const SOCKET_URL =
     import.meta.env.VITE_SOCKET_URL ||
@@ -32,11 +34,12 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         set({ socket });
 
         socket.on("connect", () => {
+            void useFriendStore.getState().refresh();
             console.log("Connected to WebSocket server. ID: " + socket.id);
             const chat = useChatStore.getState();
             void chat.fetchConversations().then(() => {
                 const activeId = useChatStore.getState().activeConversationId;
-                if (activeId) void useChatStore.getState().markConversationRead(activeId);
+                if (activeId && document.visibilityState === "visible" && document.hasFocus()) void useChatStore.getState().markConversationRead(activeId);
             });
             for (const id of Object.keys(chat.messages)) void chat.fetchMessages(id, true);
         });
@@ -52,6 +55,18 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
         socket.on("conversation-read", receipt => {
             useChatStore.getState().applyReadReceipt(receipt);
+        });
+
+        socket.on("friends-updated", () => { void useFriendStore.getState().refresh(); });
+        socket.on("conversation-created", conversation => { useChatStore.getState().updateConversation(conversation); });
+        socket.on("profile-updated", (profile: Pick<User, "_id" | "displayName" | "avatarUrl">) => {
+            useAuthStore.setState(state => ({ user: state.user?._id === profile._id ? { ...state.user, ...profile } : state.user }));
+            useChatStore.setState(state => ({ conversations: state.conversations.map(c => ({
+                ...c,
+                participants: c.participants.map(p => p._id === profile._id ? { ...p, ...profile } : p),
+                lastMessage: c.lastMessage ? { ...c.lastMessage, sender: c.lastMessage.sender._id === profile._id ? { ...c.lastMessage.sender, ...profile } : c.lastMessage.sender } : null,
+            })) }));
+            void useFriendStore.getState().refresh();
         });
 
         // new message
@@ -86,7 +101,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             };
 
             useChatStore.getState().updateConversation(updatedConversation);
-            if (useChatStore.getState().activeConversationId === message.conversationId && message.senderId !== useAuthStore.getState().user?._id) {
+            if (document.visibilityState === "visible" && document.hasFocus() && useChatStore.getState().activeConversationId === message.conversationId && message.senderId !== useAuthStore.getState().user?._id) {
                 void useChatStore.getState().markConversationRead(message.conversationId);
             }
         });
