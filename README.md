@@ -130,7 +130,7 @@ npm run lint
 
 `build` kiểm tra TypeScript và tạo bản build bằng Vite; `lint` kiểm tra mã frontend bằng Oxlint.
 
-Backend đã khai báo script `npm test`, nhưng hiện chưa có thư mục `backend/test/` trong mã nguồn. Bộ kiểm thử tự động cần được bổ sung; luồng thử bằng hai tài khoản ở trên dùng để kiểm tra thủ công.
+Kiểm thử xử lý upload avatar ở backend: chạy `node --test test/uploadMiddleware.test.js` trong thư mục `backend`. Các kiểm thử giả lập Cloudinary, không tải ảnh lên dịch vụ thật. Luồng thử bằng hai tài khoản ở trên dùng để kiểm tra thủ công.
 
 ## Triển khai và tài liệu API
 
@@ -138,3 +138,7 @@ Backend đã khai báo script `npm test`, nhưng hiện chưa có thư mục `ba
 - **Frontend:** Có cấu hình Vercel trong [frontend/vercel.json](frontend/vercel.json), bao gồm chuyển các đường dẫn về `index.html` cho ứng dụng React.
 - **Biến môi trường:** Khi triển khai, đặt `CLIENT_URL` theo domain frontend, `VITE_BASE_URL` theo URL backend kèm `/api`, và `VITE_SOCKET_URL` theo URL gốc backend. Backend cần `NODE_ENV=production`, kết nối MongoDB và secret JWT.
 - **API:** Swagger có tại `http://localhost:5001/api-docs` khi backend chạy local. Tài liệu này có thể chưa bao quát các thay đổi mới; xem [routes](backend/src/routes) để đối chiếu endpoint hiện tại.
+
+### Khi upload avatar báo cấu hình Cloudinary không hợp lệ
+
+Kiểm tra `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` và `CLOUDINARY_API_SECRET` trong cấu hình môi trường của backend trên Render. Ba giá trị phải thuộc cùng tài khoản Cloudinary; API key và API secret phải là một cặp hợp lệ. Lỗi `api_secret mismatch` cho biết secret không khớp. Lưu cấu hình đúng rồi khởi động lại/redeploy backend. Thay đổi `backend/.env` trên máy local không cập nhật các biến của bản deploy; không đặt API secret vào biến `VITE_*` hoặc commit vào Git.

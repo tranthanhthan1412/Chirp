@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Conversation } from "@/types/chat";
 import { useAuthStore } from "@/stores/useAuthstore";
 import { useChatStore } from "@/stores/useChatstore";
@@ -18,19 +18,46 @@ const MessageInput = ({ selectedConvo }: MessageInputProps) => {
     const { sendDirectMessage, sendGroupMessage } = useChatStore();
     const [value, setValue] = useState("");
     const [sending, setSending] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const sendingRef = useRef(false);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const focusComposer = (event: KeyboardEvent) => {
+            if (event.key !== "Enter" || event.defaultPrevented || event.repeat ||
+                event.isComposing || event.keyCode === 229 ||
+                event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+
+            const target = event.target;
+            if (!(target instanceof HTMLElement) || target.closest(
+                'input, textarea, select, button, a[href], [contenteditable]:not([contenteditable="false"]), [role="button"], [role="textbox"], [role="combobox"], [tabindex]:not([tabindex="-1"])'
+            )) return;
+            if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-slot="popover-content"]')) return;
+
+            event.preventDefault();
+            inputRef.current?.focus();
+        };
+
+        document.addEventListener("keydown", focusComposer);
+        return () => document.removeEventListener("keydown", focusComposer);
+    }, [user]);
 
     if (!user) return null;
 
     // Xử lý gửi tin nhắn
     const sendMessage = async () => {
-        if (!value.trim() || sending) return;
+        if (!value.trim() || sendingRef.current) return;
         const content = value.trim();
+        const otherUser = selectedConvo.participants.find((p) => p._id !== user._id);
+        if (selectedConvo.type === "direct" && !otherUser) return;
+        sendingRef.current = true;
         setSending(true);
+        inputRef.current?.focus();
 
         try {
             // Gửi tin nhắn qua API (và cập nhật store)
             if (selectedConvo.type === "direct") {
-                const otherUser = selectedConvo.participants.find((p) => p._id !== user._id);
                 if (otherUser) {
                     await sendDirectMessage(otherUser._id, content);
                 }
@@ -42,15 +69,17 @@ const MessageInput = ({ selectedConvo }: MessageInputProps) => {
             console.error("Lỗi khi gửi tin nhắn:", error);
             toast.error("Lỗi xảy ra khi gửi tin nhắn. Bạn hãy thử lại!");
         } finally {
+            sendingRef.current = false;
             setSending(false);
         }
     };
 
     // Gửi tin nhắn khi nhấn phím Enter
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+        if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey &&
+            !e.nativeEvent.isComposing && e.nativeEvent.keyCode !== 229) {
             e.preventDefault();
-            sendMessage();
+            if (!e.repeat) void sendMessage();
         }
     };
 
@@ -60,8 +89,10 @@ const MessageInput = ({ selectedConvo }: MessageInputProps) => {
             {/* Ô nhập nội dung tin nhắn & Nút chọn Emoji */}
             <div className="flex-1 relative">
                 <Input
+                    ref={inputRef}
                     value={value}
-                    disabled={sending}
+                    readOnly={sending}
+                    aria-busy={sending}
                     aria-label="Soạn tin nhắn"
                     onChange={(e) => setValue(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -69,7 +100,7 @@ const MessageInput = ({ selectedConvo }: MessageInputProps) => {
                     className="pr-10 h-9 bg-background border-border/50 focus-visible:border-primary/50 transition-smooth"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                    <EmojiPicker onChange={(emoji: string) => setValue((prev) => `${prev}${emoji}`)} />
+                    <EmojiPicker disabled={sending} onChange={(emoji: string) => setValue((prev) => `${prev}${emoji}`)} />
                 </div>
             </div>
 

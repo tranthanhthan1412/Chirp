@@ -1,8 +1,14 @@
 import axios from "axios";
 import { useAuthStore } from "@/stores/useAuthstore";
 
+// Normalize accidental double slashes in the path without changing https://.
+const baseURL = (
+    import.meta.env.VITE_BASE_URL ||
+    (import.meta.env.DEV ? "http://localhost:5001/api" : "/api")
+).trim().replace(/([^:]\/)\/+/g, "$1");
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL || (import.meta.env.DEV ? "http://localhost:5001/api" : "/api"),
+    baseURL,
     withCredentials: true,
 });
 let refreshing: Promise<string> | null = null;

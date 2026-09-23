@@ -23,7 +23,20 @@ export function uploadImageFromBuffer(buffer) {
             folder: "chirp/avatars", resource_type: "image",
             allowed_formats: ["jpg", "png", "webp"],
             transformation: [{ width: 256, height: 256, crop: "fill", gravity: "auto" }],
-        }, (error, result) => error ? reject(error) : resolve(result)).end(buffer);
+        }, (error, result) => {
+            if (!error) return resolve(result);
+
+            // Cloudinary credentials belong to the server, not the user's session.
+            // Do not expose provider errors, which may include API keys/signatures.
+            const invalidCredentials = error.http_code === 401 || error.http_code === 403;
+            const status = error.http_code === 400 ? 400 : 503;
+            const message = invalidCredentials
+                ? "Cấu hình Cloudinary không hợp lệ. Vui lòng kiểm tra Cloud name, API key và API secret trên máy chủ."
+                : status === 400
+                    ? "Không thể xử lý ảnh. Vui lòng chọn ảnh JPG, PNG hoặc WebP hợp lệ."
+                    : "Không thể tải ảnh lên dịch vụ lưu trữ. Vui lòng thử lại sau.";
+            reject(Object.assign(new Error(message), { status }));
+        }).end(buffer);
     });
 }
 

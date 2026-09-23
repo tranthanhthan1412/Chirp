@@ -6,16 +6,18 @@ import data from "@emoji-mart/data";
 
 interface EmojiPickerProps {
   onChange: (value: string) => void;
+  disabled?: boolean;
 }
 
 // Component chọn biểu tượng cảm xúc Emoji sử dụng emoji-mart
-const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
+const EmojiPicker = ({ onChange, disabled = false }: EmojiPickerProps) => {
   const { isDark } = useThemeStore();
 
   return (
     <Popover>
       <PopoverTrigger
         type="button"
+        disabled={disabled}
         className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md flex items-center justify-center cursor-pointer"
         title="Chọn biểu tượng cảm xúc"
       >
